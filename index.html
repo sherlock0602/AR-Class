@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>AR 圖片與影片整合版</title>
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.3/aframe/build/aframe-ar.js"></script>
+    
+    <style>
+        body { margin: 0; overflow: hidden; font-family: sans-serif; }
+        
+        /* 載入畫面 */
+        #arLoading {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: white; transition: opacity 0.5s;
+        }
+
+        /* 開始按鈕 (為了解決影片不能自動播放的問題) */
+        #startButton {
+            padding: 15px 30px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 18px;
+            cursor: pointer;
+            margin-top: 20px;
+            display: none; /* 一開始先隱藏，等載入完再顯示 */
+        }
+    </style>
+</head>
+
+<body>
+    <div id="arLoading">
+        <div id="loadingText">正在初始化 AR 系統...</div>
+        <button id="startButton">點擊這裡開始體驗</button>
+    </div>
+
+    <a-scene embedded 
+        arjs="trackingMethod: best; detectionMode: mono; sourceType: webcam; debugUIEnabled: false;"
+        renderer="logarithmicDepthBuffer: true;">
+
+        <a-assets>
+            <video 
+                id="my-video" 
+                src="assets/video.mp4" 
+                preload="auto" 
+                response-type="arraybuffer" 
+                loop 
+                crossorigin
+                webkit-playsinline 
+                playsinline>
+            </video>
+        </a-assets>
+
+        <a-marker type="pattern" url="markers/marker00.patt">
+            <a-image src="assets/show-image-00.png" position="0 0.1 0" rotation="-90 0 0" width="1" height="1"></a-image>
+        </a-marker>
+
+        <a-marker type="pattern" url="markers/marker01.patt"> 
+            <a-image src="assets/show-image-01.png" position="0 0.1 0" rotation="-90 0 0" width="1" height="1"></a-image>
+        </a-marker>
+
+        <a-marker type="pattern" url="markers/pattern-1.patt"> 
+            <a-image src="assets/show-image-02.png" position="0 0.1 0" rotation="-90 0 0" width="1" height="1"></a-image>
+        </a-marker>
+
+        <a-marker type="pattern" url="markers/pattern02.patt"> 
+            <a-image src="assets/show-image-02.png" position="0 0.1 0" rotation="-90 0 0" width="1" height="1"></a-image>
+        </a-marker>
+
+        <a-marker type="pattern" url="markers/marker02.patt"> 
+            <a-image src="assets/show-image-03.png" position="0 0.1 0" rotation="-90 0 0" width="1" height="1"></a-image>
+        </a-marker>
+
+        <a-marker type="pattern" url="markers/video.patt" id="marker-video">
+            <a-video 
+                src="#my-video" 
+                position="0 0.1 0" 
+                rotation="-90 0 0" 
+                width="1.6" 
+                height="0.9"> </a-video>
+        </a-marker>
+
+        <a-entity camera></a-entity>
+    </a-scene>
+
+    <script>
+        window.addEventListener('load', () => {
+            const loadingOverlay = document.getElementById('arLoading');
+            const loadingText = document.getElementById('loadingText');
+            const startBtn = document.getElementById('startButton');
+            const video = document.getElementById('my-video');
+            const videoMarker = document.getElementById('marker-video');
+
+            // 1. 畫面載入完成後，顯示「開始按鈕」
+            setTimeout(() => {
+                loadingText.style.display = 'none';
+                startBtn.style.display = 'block';
+            }, 2000);
+
+            // 2. 使用者點擊按鈕後的行為
+            startBtn.addEventListener('click', () => {
+                // 隱藏遮罩
+                loadingOverlay.style.opacity = '0';
+                setTimeout(() => { loadingOverlay.style.display = 'none'; }, 500);
+
+                // 重要：播放一下影片再馬上暫停，為了取得瀏覽器的播放權限
+                video.play();
+                video.pause();
+            });
+
+            // 3. AR 互動邏輯：掃到標記才播影片
+            videoMarker.addEventListener('markerFound', () => {
+                video.play();
+            });
+
+            videoMarker.addEventListener('markerLost', () => {
+                video.pause();
+            });
+        });
+    </script>
+</body>
+</html>
