@@ -10,7 +10,6 @@
     <style>
         body { margin: 0; overflow: hidden; font-family: sans-serif; }
         
-        /* 載入畫面 */
         #arLoading {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); z-index: 9999;
@@ -18,7 +17,6 @@
             color: white; transition: opacity 0.5s;
         }
 
-        /* 開始按鈕 (為了解決影片不能自動播放的問題) */
         #startButton {
             padding: 15px 30px;
             background: #2196F3;
@@ -28,7 +26,7 @@
             font-size: 18px;
             cursor: pointer;
             margin-top: 20px;
-            display: none; /* 一開始先隱藏，等載入完再顯示 */
+            display: none;
         }
     </style>
 </head>
@@ -47,6 +45,17 @@
             <video 
                 id="my-video" 
                 src="assets/video.mp4" 
+                preload="auto" 
+                response-type="arraybuffer" 
+                loop 
+                crossorigin
+                webkit-playsinline 
+                playsinline>
+            </video>
+
+            <video 
+                id="video-001" 
+                src="assets/video001.mp4" 
                 preload="auto" 
                 response-type="arraybuffer" 
                 loop 
@@ -82,6 +91,16 @@
                 position="0 0.1 0" 
                 rotation="-90 0 0" 
                 width="1.6" 
+                height="0.9"> 
+            </a-video>
+        </a-marker>
+
+        <a-marker type="pattern" url="markers/video001.patt" id="marker-video-001">
+            <a-video 
+                src="#video-001" 
+                position="0 0.1 0" 
+                rotation="-90 0 0" 
+                width="1.6" 
                 height="0.9"> </a-video>
         </a-marker>
 
@@ -93,34 +112,48 @@
             const loadingOverlay = document.getElementById('arLoading');
             const loadingText = document.getElementById('loadingText');
             const startBtn = document.getElementById('startButton');
-            const video = document.getElementById('my-video');
-            const videoMarker = document.getElementById('marker-video');
 
-            // 1. 畫面載入完成後，顯示「開始按鈕」
+            // 抓取影片與標記物件
+            const video1 = document.getElementById('my-video');
+            const marker1 = document.getElementById('marker-video');
+
+            // ★★★ 抓取新影片與標記物件 ★★★
+            const video2 = document.getElementById('video-001');
+            const marker2 = document.getElementById('marker-video-001');
+
+            // 1. 顯示開始按鈕
             setTimeout(() => {
                 loadingText.style.display = 'none';
                 startBtn.style.display = 'block';
             }, 2000);
 
-            // 2. 使用者點擊按鈕後的行為
+            // 2. 點擊按鈕：解除所有影片的靜音限制
             startBtn.addEventListener('click', () => {
-                // 隱藏遮罩
                 loadingOverlay.style.opacity = '0';
                 setTimeout(() => { loadingOverlay.style.display = 'none'; }, 500);
 
-                // 重要：播放一下影片再馬上暫停，為了取得瀏覽器的播放權限
-                video.play();
-                video.pause();
+                // 讓第一部影片取得權限
+                video1.play();
+                video1.pause();
+
+                // ★★★ 讓新影片也取得權限 ★★★
+                video2.play();
+                video2.pause();
             });
 
-            // 3. AR 互動邏輯：掃到標記才播影片
-            videoMarker.addEventListener('markerFound', () => {
-                video.play();
-            });
+            // 3. 定義一個函式來處理影片播放邏輯 (避免重複寫程式碼)
+            function setupVideoControl(marker, video) {
+                marker.addEventListener('markerFound', () => {
+                    video.play();
+                });
+                marker.addEventListener('markerLost', () => {
+                    video.pause();
+                });
+            }
 
-            videoMarker.addEventListener('markerLost', () => {
-                video.pause();
-            });
+            // 套用播放邏輯
+            setupVideoControl(marker1, video1);
+            setupVideoControl(marker2, video2); // ★★★ 套用到新影片
         });
     </script>
 </body>
