@@ -1,119 +1,33 @@
-<script>
-        // =================================================================
-        // 1. 設定清單：請在這裡填入正確的檔名
-        // =================================================================
-        // marker: 標記檔名 (不含 .patt，程式會去 markers/ 資料夾找)
-        // file:   對應的媒體檔名 (含副檔名，程式會去 assets/ 資料夾找)
-        // type:   'image' (圖片) 或 'video' (影片)
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>AR 除錯模式</title>
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.3/aframe/build/aframe-ar.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: sans-serif; }
+        .debug-info {
+            position: fixed; top: 10px; left: 10px; background: white; padding: 10px; z-index: 99999;
+        }
+    </style>
+</head>
+<body style="margin: 0px; overflow: hidden;">
+    
+    <div class="debug-info">
+        除錯模式：如果不顯示紅色方塊，代表相機權限未開啟。
+        <br>請確認網址開頭是 https
+    </div>
+
+    <a-scene embedded arjs>
         
-        const arData = [
-            // --- 圖片區 ---
-            // 範例：標記是 marker00.patt，但圖片是 show-image-00.png
-            { marker: 'marker00',  file: 'show-image-00.png', type: 'image' },
-            { marker: 'marker01',  file: 'show-image-01.png', type: 'image' },
-            { marker: 'pattern-1', file: 'show-image-02.png', type: 'image' },
-            { marker: 'pattern02', file: 'show-image-02.png', type: 'image' },
-            { marker: 'marker02',  file: 'show-image-03.png', type: 'image' },
+        <a-marker preset="hiro">
+            <a-box position="0 0.5 0" material="color: red; opacity: 0.5;"></a-box>
+        </a-marker>
 
-            // --- 影片區 ---
-            // 範例：標記是 video.patt，影片是 video.mp4
-            { marker: 'video',     file: 'video.mp4',    type: 'video' },
-            { marker: 'video001',  file: 'video001.mp4', type: 'video' }
-        ];
+        <a-entity camera></a-entity>
+    </a-scene>
 
-        // =================================================================
-        // 2. 自動生成與優化邏輯
-        // =================================================================
-        const scene = document.querySelector('#mainScene');
-        const assetsContainer = document.querySelector('#assetsContainer');
-        const videoElements = []; 
-
-        arData.forEach((item, index) => {
-            // 定義路徑
-            const markerPath = `markers/${item.marker}.patt`;
-            const mediaPath = `assets/${item.file}`;
-            const resId = `res-${index}`; // 給每個資源一個獨一無二的 ID
-
-            // --- 步驟 A: 預載資源 (解決黑畫面的關鍵) ---
-            let assetEl;
-            if (item.type === 'video') {
-                assetEl = document.createElement('video');
-                assetEl.setAttribute('loop', 'true');
-                assetEl.setAttribute('crossorigin', 'anonymous');
-                assetEl.setAttribute('webkit-playsinline', 'true');
-                assetEl.setAttribute('playsinline', 'true');
-            } else {
-                // 圖片也要建立 img 標籤放入 assets 來預載
-                assetEl = document.createElement('img');
-            }
-            
-            assetEl.setAttribute('id', resId);
-            assetEl.setAttribute('src', mediaPath);
-            
-            // 如果是影片或圖片，都加入 assets 區塊
-            assetsContainer.appendChild(assetEl);
-
-            if (item.type === 'video') {
-                videoElements.push({ element: assetEl, markerId: `marker-${item.marker}` });
-            }
-
-            // --- 步驟 B: 建立標記 (Marker) ---
-            const marker = document.createElement('a-marker');
-            marker.setAttribute('type', 'pattern');
-            marker.setAttribute('url', markerPath);
-            marker.setAttribute('id', `marker-${item.marker}`);
-
-            // --- 步驟 C: 建立顯示內容 (指向 ID) ---
-            // 使用 src="#ID" 的方式，確保是讀取已經載入好的資源
-            let entity;
-            if (item.type === 'image') {
-                entity = document.createElement('a-image');
-                entity.setAttribute('width', '1');
-                entity.setAttribute('height', '1');
-            } else {
-                entity = document.createElement('a-video');
-                entity.setAttribute('width', '1.6');
-                entity.setAttribute('height', '0.9');
-            }
-
-            entity.setAttribute('src', `#${resId}`); // 這裡連結到上面的 assets
-            entity.setAttribute('position', '0 0.1 0');
-            entity.setAttribute('rotation', '-90 0 0');
-            
-            marker.appendChild(entity);
-            scene.appendChild(marker);
-        });
-
-        // =================================================================
-        // 3. 互動邏輯 (影片解鎖)
-        // =================================================================
-        window.addEventListener('load', () => {
-            const loadingOverlay = document.getElementById('arLoading');
-            const loadingText = document.getElementById('loadingText');
-            const startBtn = document.getElementById('startButton');
-
-            setTimeout(() => {
-                loadingText.style.display = 'none';
-                startBtn.style.display = 'block';
-            }, 1500);
-
-            startBtn.addEventListener('click', () => {
-                loadingOverlay.style.opacity = '0';
-                setTimeout(() => { loadingOverlay.style.display = 'none'; }, 500);
-
-                // 解鎖所有影片
-                videoElements.forEach(v => {
-                    v.element.play().then(() => v.element.pause()).catch(e => {});
-                });
-            });
-
-            // 影片自動播放控制
-            videoElements.forEach(v => {
-                const marker = document.getElementById(v.markerId);
-                if (marker) {
-                    marker.addEventListener('markerFound', () => v.element.play());
-                    marker.addEventListener('markerLost', () => v.element.pause());
-                }
-            });
-        });
-    </script>
+</body>
+</html>
