@@ -2,13 +2,22 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>AR 自動產生器版</title>
+    <title>AR 自動產生器版 (手機修正)</title>
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.3/aframe/build/aframe-ar.js"></script>
     
     <style>
         body { margin: 0; overflow: hidden; font-family: sans-serif; }
+        
+        /* ★★★ 新增：確保攝像頭畫面與 3D 畫布完全重疊，解決手機偏移問題 ★★★ */
+        video, canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+
         #arLoading {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); z-index: 9999;
@@ -29,56 +38,54 @@
     </div>
 
     <a-scene embedded 
-        arjs="trackingMethod: best; detectionMode: mono; sourceType: webcam; debugUIEnabled: false;"
+        vr-mode-ui="enabled: false"
+        arjs="trackingMethod: best; detectionMode: mono; sourceType: webcam; debugUIEnabled: false; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960;"
         renderer="logarithmicDepthBuffer: true;"
         id="mainScene">
 
         <a-assets id="assetsContainer"></a-assets>
-
         <a-entity camera></a-entity>
     </a-scene>
 
     <script>
         // =================================================================
-        // 1. 設定清單：你只要改這裡！
+        // 1. 設定清單 (保留你原本的設定)
         // =================================================================
-        // 格式：{ name: '檔名(不含副檔名)', type: 'image 或 video', fileExt: '副檔名' }
-        // 
         // 規則：
         // - 標記檔(.patt) 必須放在 markers/ 資料夾，且名稱跟這裡的 name 一樣
         // - 媒體檔(png/mp4) 必須放在 assets/ 資料夾，且名稱跟這裡的 name 一樣
         
         const arData = [
-            // 圖片範例 (會自動找 markers/marker00.patt 和 assets/show-image-00.png)
+            // 圖片範例
             { name: 'marker00',   type: 'image', fileExt: 'png' },
             { name: 'marker01',   type: 'image', fileExt: 'png' },
-            { name: 'pattern-1',  type: 'image', fileExt: 'png' }, // 對應 pattern-1.patt
+            { name: 'pattern-1',  type: 'image', fileExt: 'png' },
             { name: 'pattern02',  type: 'image', fileExt: 'png' },
             { name: 'marker02',   type: 'image', fileExt: 'png' },
-            { name: 'love',       type: 'image', fileExt: 'jpg' },
-            // 影片範例 (會自動找 markers/video.patt 和 assets/video.mp4)
+            { name: 'love',       type: 'image', fileExt: 'jpg' }, // 你的新圖片
+            
+            // 影片範例
             { name: 'video',      type: 'video', fileExt: 'mp4' },
-            { name: 'light',      type: 'video', fileExt: 'mp4' },
-            { name: 'airplane',   type: 'video', fileExt: 'mp4' },
+            { name: 'light',      type: 'video', fileExt: 'mp4' }, // 你的新影片
+            { name: 'airplane',   type: 'video', fileExt: 'mp4' }, // 你的新影片
             { name: 'video001',   type: 'video', fileExt: 'mp4' }
         ];
 
         // =================================================================
-        // 2. 自動生成程式碼 (以下不用動)
+        // 2. 自動生成程式碼
         // =================================================================
         const scene = document.querySelector('#mainScene');
         const assetsContainer = document.querySelector('#assetsContainer');
-        const videoElements = []; // 用來存影片物件，方便後面控制
+        const videoElements = []; 
 
         arData.forEach(item => {
             // 定義路徑
             const markerPath = `markers/${item.name}.patt`;
             const mediaPath = `assets/${item.name}.${item.fileExt}`;
-            const mediaId = `res-${item.name}`; // 給資源一個 ID
+            const mediaId = `res-${item.name}`;
 
             // --- 步驟 A: 建立資源 (Assets) ---
             if (item.type === 'video') {
-                // 建立 <video>標籤
                 const vid = document.createElement('video');
                 vid.setAttribute('id', mediaId);
                 vid.setAttribute('src', mediaPath);
@@ -86,13 +93,12 @@
                 vid.setAttribute('response-type', 'arraybuffer');
                 vid.setAttribute('loop', 'true');
                 vid.setAttribute('crossorigin', 'anonymous');
-                vid.setAttribute('webkit-playsinline', 'true');
+                vid.setAttribute('webkit-playsinline', 'true'); // 防止 iOS 全螢幕
                 vid.setAttribute('playsinline', 'true');
                 assetsContainer.appendChild(vid);
                 videoElements.push({ id: mediaId, element: vid, markerId: `marker-${item.name}` });
             } 
-            // 圖片通常不需要預載到 a-assets，直接寫在 a-image 即可，這裡省略
-
+            
             // --- 步驟 B: 建立標記 (Marker) ---
             const marker = document.createElement('a-marker');
             marker.setAttribute('type', 'pattern');
@@ -110,37 +116,39 @@
                 marker.appendChild(img);
             } else if (item.type === 'video') {
                 const aVid = document.createElement('a-video');
-                aVid.setAttribute('src', `#${mediaId}`); // 指向上面建立的 ID
+                aVid.setAttribute('src', `#${mediaId}`);
                 aVid.setAttribute('position', '0 0.1 0');
                 aVid.setAttribute('rotation', '-90 0 0');
-                aVid.setAttribute('width', '1.6'); // 影片預設寬一點
+                aVid.setAttribute('width', '1.6');
                 aVid.setAttribute('height', '0.9');
                 marker.appendChild(aVid);
             }
 
-            // 將標記放入場景
             scene.appendChild(marker);
         });
 
         // =================================================================
-        // 3. 互動邏輯 (處理影片播放)
+        // 3. 互動邏輯 (包含手機版 Resize 修正)
         // =================================================================
         window.addEventListener('load', () => {
             const loadingOverlay = document.getElementById('arLoading');
             const loadingText = document.getElementById('loadingText');
             const startBtn = document.getElementById('startButton');
 
-            // 顯示開始按鈕
+            // 稍微延遲顯示開始按鈕，確保系統初始化
             setTimeout(() => {
                 loadingText.style.display = 'none';
                 startBtn.style.display = 'block';
+                
+                // ★★★ 新增：強制觸發一次視窗重整，修正手機版面錯位 ★★★
+                window.dispatchEvent(new Event('resize'));
             }, 1500);
 
             startBtn.addEventListener('click', () => {
                 loadingOverlay.style.opacity = '0';
                 setTimeout(() => { loadingOverlay.style.display = 'none'; }, 500);
 
-                // 讓所有影片取得權限 (播放一瞬間再暫停)
+                // 解鎖所有影片播放權限
                 videoElements.forEach(v => {
                     v.element.play().then(() => {
                         v.element.pause();
@@ -148,7 +156,7 @@
                 });
             });
 
-            // 為每個影片標記加入「掃到就播」的監聽器
+            // 影片掃描監聽
             videoElements.forEach(v => {
                 const marker = document.getElementById(v.markerId);
                 if (marker) {
@@ -164,6 +172,3 @@
     </script>
 </body>
 </html>
-
-
-
