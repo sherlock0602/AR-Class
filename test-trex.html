@@ -2,20 +2,26 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>T-Rex 官方測試</title>
+    <title>T-Rex 官方測試 (穩定修復版)</title>
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-    <script src="https://cdn.jsdelivr.net/gh/aframevr/aframe@1c2407b26c61958baa93960954db63787e3a2518/dist/aframe-master.min.js"></script>
+    
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+
     <style>
         .arjs-loader {
             height: 100%; width: 100%; position: absolute; top: 0; left: 0;
             background-color: rgba(0, 0, 0, 0.8); z-index: 9999;
             display: flex; justify-content: center; align-items: center; color: white;
+            font-family: sans-serif;
         }
     </style>
 </head>
+
 <body style="margin: 0px; overflow: hidden;">
-    <div class="arjs-loader"><div>正在讀取官方恐龍範例...</div></div>
+    <div class="arjs-loader">
+        <div>正在讀取官方恐龍範例...<br>(第一次載入需要約 10-20 秒)</div>
+    </div>
 
     <a-scene
         vr-mode-ui="enabled: false"
@@ -26,9 +32,13 @@
         <a-nft
             type="nft"
             url="https://raw.githack.com/AR-js-org/AR.js/master/aframe/examples/image-tracking/nft/trex/trex-image/trex"
-            smooth="true" smoothCount="10" smoothTolerance=".01" smoothThreshold="5">
+            smooth="true"
+            smoothCount="10"
+            smoothTolerance=".01"
+            smoothThreshold="5">
             
-            <a-box position="50 0 -100" scale="100 100 100" color="green" opacity="0.5"></a-box>
+            <a-box position="50 150 -100" scale="150 150 150" color="red" opacity="0.8" animation="property: rotation; to: 0 360 0; loop: true; dur: 2000"></a-box>
+            
         </a-nft>
         
         <a-entity camera></a-entity>
